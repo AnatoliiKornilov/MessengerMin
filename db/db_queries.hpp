@@ -1,0 +1,43 @@
+#pragma once
+
+#include <string>
+
+const std::string create_user_query =
+  "INSERT INTO users (user_name, password_hash) " 
+  "VALUES ($1, $2) RETURNING "
+  "user_id";
+
+const std::string find_user_by_name_query = 
+  "SELECT user_id "
+  "FROM users "
+  "WHERE user_name = $1";
+
+const std::string find_personal_chat_query = 
+  "SELECT c.chat_id "
+  "FROM chats c "
+  "JOIN chat_members cm1 ON c.chat_id = cm1.chat_id AND cm1.user_id = $1 "
+  "JOIN chat_members cm2 ON c.chat_id = cm2.chat_id AND cm2.user_id = $2 "
+  "WHERE c.is_group = false";
+
+const std::string create_personal_chat_query = 
+  "INSERT INTO chats (is_group) "
+  "VALUES (false) "
+  "RETURNING chat_id";
+
+const std::string add_user_to_chat_query = 
+  "INSERT INTO chat_members (chat_id, user_id) "
+  "VALUES ($1, $2)";
+
+const std::string create_group_chat_query = 
+  "INSERT INTO chats (is_group, chat_name) "
+  "VALUES (true, $1) "
+  "RETURNING chat_id";
+
+const std::string remove_user_from_chat_query = 
+  "DELETE FROM chat_members "
+  "WHERE chat_id = $1 AND user_id = $2";
+
+const std::string check_is_group_query = 
+  "SELECT is_group "
+  "FROM chats "
+  "WHERE chat_id = $1";
