@@ -4,12 +4,14 @@
 ChatRepository::ChatRepository(DataBase& db) : db_(db) {}
 
 std::string ChatRepository::create_personal_chat(const std::string& user_id_1, const std::string& user_id_2) {
+  std::unique_lock<std::mutex> lock = db_.lock();
   pqxx::work transaction{db_.connection()};
 
   pqxx::result existing = transaction.exec_params(find_personal_chat_query, user_id_1, user_id_2);
 
   if (!existing.empty()) {
     transaction.commit();
+    lock.unlock();
 
     std::string chat_id = existing[0][0].as<std::string>();
 
@@ -23,11 +25,13 @@ std::string ChatRepository::create_personal_chat(const std::string& user_id_1, c
   transaction.exec_params(add_user_to_chat_query, chat_id, user_id_2);
 
   transaction.commit();
+  lock.unlock();
 
   return chat_id;
 }
 
 std::string ChatRepository::create_group(const std::string& creator_user_id, const std::string& group_name) {
+  std::unique_lock<std::mutex> lock = db_.lock();
   pqxx::work transaction{db_.connection()};
 
   pqxx::row new_chat = transaction.exec_params1(create_group_chat_query, group_name);
@@ -36,15 +40,19 @@ std::string ChatRepository::create_group(const std::string& creator_user_id, con
   transaction.exec_params(add_user_to_chat_query, chat_id, creator_user_id);
 
   transaction.commit();
+  lock.unlock();
 
   return chat_id;
 }
 
 void ChatRepository::add_member(const std::string& chat_id, const std::string& user_id) {
+  std::unique_lock<std::mutex> lock = db_.lock();
   pqxx::work transaction{db_.connection()};
 
   if (!is_group_chat(transaction, chat_id)) {
     transaction.commit();
+    lock.unlock();
+
     throw std::runtime_error("Cannot add member to non-group chat");
   }
 
@@ -57,13 +65,17 @@ void ChatRepository::add_member(const std::string& chat_id, const std::string& u
   }
 
   transaction.commit();
+  lock.unlock();
 }
 
 void ChatRepository::remove_member(const std::string& chat_id, const std::string& user_id) {
+  std::unique_lock<std::mutex> lock = db_.lock();
   pqxx::work transaction{db_.connection()};
 
   if (!is_group_chat(transaction, chat_id)) {
     transaction.commit();
+    lock.unlock();
+
     throw std::runtime_error("Cannot remove member from non-group chat");
   }
 
@@ -74,6 +86,7 @@ void ChatRepository::remove_member(const std::string& chat_id, const std::string
   }
 
   transaction.commit();
+  lock.unlock();
 }
 
 bool ChatRepository::is_group_chat(pqxx::work& transaction, const std::string& chat_id) {
@@ -83,11 +96,13 @@ bool ChatRepository::is_group_chat(pqxx::work& transaction, const std::string& c
 }
 
 std::vector<ChatInfo> ChatRepository::get_chats_for_user(const std::string& user_id) {
+  std::unique_lock<std::mutex> lock = db_.lock();
   pqxx::work transaction{db_.connection()};
 
   pqxx::result rows = transaction.exec_params(get_chats_for_user_query, user_id);
 
   transaction.commit();
+  lock.unlock();
 
   std::vector<ChatInfo> chats;
 

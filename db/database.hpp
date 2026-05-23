@@ -3,6 +3,7 @@
 #include <pqxx/pqxx>
 
 #include <memory>
+#include <mutex>
 #include <string>
 
 class DataBase {
@@ -15,7 +16,12 @@ class DataBase {
     return *conn_;
   }
 
+  inline std::unique_lock<std::mutex> lock() {
+    return std::unique_lock<std::mutex>(mutex_);
+  }
+
  private:
 
   std::unique_ptr<pqxx::connection> conn_;
+  std::mutex mutex_;
 };
