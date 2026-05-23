@@ -12,6 +12,7 @@ find_package(GTest REQUIRED)
 add_library(db_lib STATIC
     db/user_repository.cpp
     db/chat_repository.cpp
+    db/message_repository.cpp
 )
 
 target_include_directories(db_lib PUBLIC db)
@@ -28,3 +29,8 @@ add_executable(test_chat_repository
     test/test_chat_repository.cpp
 )
 target_link_libraries(test_chat_repository PRIVATE ${TEST_LIBS})
+
+add_executable(test_message_repository
+    test/test_message_repository.cpp
+)
+target_link_libraries(test_message_repository PRIVATE ${TEST_LIBS})

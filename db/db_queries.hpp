@@ -41,3 +41,22 @@ const std::string check_is_group_query =
   "SELECT is_group "
   "FROM chats "
   "WHERE chat_id = $1";
+
+const std::string send_message_query =
+  "INSERT INTO messages (chat_id, sender_id, text_message) "
+  "VALUES ($1, $2, $3) "
+  "RETURNING message_id, sent_time";
+
+const std::string check_membership_query =
+  "SELECT 1 "
+  "FROM chat_members "
+  "WHERE chat_id = $1 AND user_id = $2";
+
+const std::string get_messages_query = 
+  "SELECT m.message_id, m.sender_id, u.user_name, m.text_message, m.sent_time "
+  "FROM messages m "
+  "JOIN users u ON m.sender_id = u.user_id "
+  "WHERE m.chat_id = $1 "
+  "ORDER BY m.sent_time ASC "
+  "LIMIT $2 "
+  "OFFSET $3 ";
