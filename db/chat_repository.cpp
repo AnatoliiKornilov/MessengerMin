@@ -81,3 +81,25 @@ bool ChatRepository::is_group_chat(pqxx::work& transaction, const std::string& c
 
   return row[0].as<bool>();
 }
+
+std::vector<ChatInfo> ChatRepository::get_chats_for_user(const std::string& user_id) {
+  pqxx::work transaction{db_.connection()};
+
+  pqxx::result rows = transaction.exec_params(get_chats_for_user_query, user_id);
+
+  transaction.commit();
+
+  std::vector<ChatInfo> chats;
+
+  for (const pqxx::row& row : rows) {
+    chats.emplace_back(
+      row[0].as<std::string>(),
+      row[1].as<bool>(),
+      row[2].is_null() ? "" : row[2].as<std::string>(),
+      row[3].is_null() ? "" : row[3].as<std::string>(),
+      row[4].is_null() ? "" : row[4].as<std::string>()
+    );
+  }
+
+  return chats;
+}

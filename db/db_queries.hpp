@@ -60,3 +60,17 @@ const std::string get_messages_query =
   "ORDER BY m.sent_time ASC "
   "LIMIT $2 "
   "OFFSET $3 ";
+
+const std::string get_chats_for_user_query = 
+  "SELECT c.chat_id, c.is_group, "
+  "  CASE WHEN NOT c.is_group THEN "
+  "    (SELECT u.user_name FROM chat_members cm "
+  "     JOIN users u ON cm.user_id = u.user_id "
+  "     WHERE cm.chat_id = c.chat_id AND cm.user_id != $1 LIMIT 1) "
+  "  ELSE c.chat_name END AS display_name, "
+  "  (SELECT text_message FROM messages WHERE chat_id = c.chat_id ORDER BY sent_time DESC LIMIT 1) AS last_message, "
+  "  (SELECT sent_time FROM messages WHERE chat_id = c.chat_id ORDER BY sent_time DESC LIMIT 1) AS last_time "
+  "FROM chats c "
+  "JOIN chat_members cm ON c.chat_id = cm.chat_id "
+  "WHERE cm.user_id = $1 "
+  "ORDER BY last_time DESC NULLS LAST";

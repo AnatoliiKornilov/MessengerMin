@@ -1,6 +1,7 @@
 #pragma once
 
 #include "database.hpp"
+#include "../dto/chat_info.hpp"
 
 #include <pqxx/pqxx>
 
@@ -18,6 +19,8 @@ class ChatRepository {
   void add_member(const std::string& chat_id, const std::string& user_id);
 
   void remove_member(const std::string& chat_id, const std::string& user_id);
+
+  std::vector<ChatInfo> get_chats_for_user(const std::string& user_id);
 
  private:
 
