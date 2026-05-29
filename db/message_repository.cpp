@@ -10,7 +10,8 @@ std::pair<std::string, std::string> MessageRepository::send_message(
     const std::string& chat_id, 
     const std::string& sender_id,
     const std::string& text) {
-  pqxx::work transaction{db_.connection()};
+  auto conn_guard = db_.connection();
+  pqxx::work transaction{*conn_guard.connection};
 
   if (!check_membership(transaction, chat_id, sender_id)) {
     throw std::runtime_error("User is not a member of this chat");
@@ -31,7 +32,8 @@ std::vector<MessageData> MessageRepository::get_chat_messages(
     const std::string& chat_id, 
     unsigned int limit, 
     unsigned int offset) {
-  pqxx::work transaction{db_.connection()};
+  auto conn_guard = db_.connection();
+  pqxx::work transaction{*conn_guard.connection};
 
   pqxx::result rows =
       transaction.exec_params(get_messages_query, chat_id, limit, offset);
@@ -66,7 +68,8 @@ void MessageRepository::edit_message(
     const std::string& message_id, 
     const std::string& user_id, 
     const std::string& new_text) {
-  pqxx::work transaction{db_.connection()};
+  auto conn_guard = db_.connection();
+  pqxx::work transaction{*conn_guard.connection};
 
   pqxx::result res = transaction.exec_params(edit_message_query, new_text, message_id, user_id);
 
@@ -78,7 +81,8 @@ void MessageRepository::edit_message(
 }
 
 void MessageRepository::delete_message(const std::string& message_id, const std::string& user_id) {
-  pqxx::work transaction{db_.connection()};
+  auto conn_guard = db_.connection();
+  pqxx::work transaction{*conn_guard.connection};
 
   pqxx::result res = transaction.exec_params(delete_message_query, message_id, user_id);
 

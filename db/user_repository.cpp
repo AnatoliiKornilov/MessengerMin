@@ -6,7 +6,8 @@
 UserRepository::UserRepository(DataBase& db) : db_(db) {}
 
 std::string UserRepository::create_user(const std::string& user_name, const std::string& password_hash) {
-  pqxx::work transaction{db_.connection()};
+  auto conn_guard = db_.connection();
+  pqxx::work transaction{*conn_guard.connection};
 
   pqxx::row response = transaction.exec_params1(create_user_query, user_name, password_hash);
 
@@ -18,7 +19,8 @@ std::string UserRepository::create_user(const std::string& user_name, const std:
 }
 
 std::optional<std::string> UserRepository::find_user_by_name(const std::string& user_name) {
-  pqxx::work transaction{db_.connection()};
+  auto conn_guard = db_.connection();
+  pqxx::work transaction{*conn_guard.connection};
 
   pqxx::result result = transaction.exec_params(find_user_by_name_query, user_name);
 

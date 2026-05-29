@@ -4,7 +4,8 @@
 ChatRepository::ChatRepository(DataBase& db) : db_(db) {}
 
 std::string ChatRepository::create_personal_chat(const std::string& user_id_1, const std::string& user_id_2) {
-  pqxx::work transaction{db_.connection()};
+  auto conn_guard = db_.connection();
+  pqxx::work transaction{*conn_guard.connection};
 
   pqxx::result existing = transaction.exec_params(find_personal_chat_query, user_id_1, user_id_2);
 
@@ -28,7 +29,8 @@ std::string ChatRepository::create_personal_chat(const std::string& user_id_1, c
 }
 
 std::string ChatRepository::create_group(const std::string& creator_user_id, const std::string& group_name) {
-  pqxx::work transaction{db_.connection()};
+  auto conn_guard = db_.connection();
+  pqxx::work transaction{*conn_guard.connection};
 
   pqxx::row new_chat = transaction.exec_params1(create_group_chat_query, group_name);
   std::string chat_id = new_chat[0].as<std::string>();
@@ -41,7 +43,8 @@ std::string ChatRepository::create_group(const std::string& creator_user_id, con
 }
 
 void ChatRepository::add_member(const std::string& chat_id, const std::string& user_id) {
-  pqxx::work transaction{db_.connection()};
+  auto conn_guard = db_.connection();
+  pqxx::work transaction{*conn_guard.connection};
 
   if (!is_group_chat(transaction, chat_id)) {
     transaction.commit();
@@ -61,7 +64,8 @@ void ChatRepository::add_member(const std::string& chat_id, const std::string& u
 }
 
 void ChatRepository::remove_member(const std::string& chat_id, const std::string& user_id) {
-  pqxx::work transaction{db_.connection()};
+  auto conn_guard = db_.connection();
+  pqxx::work transaction{*conn_guard.connection};
 
   if (!is_group_chat(transaction, chat_id)) {
     transaction.commit();
@@ -85,7 +89,8 @@ bool ChatRepository::is_group_chat(pqxx::work& transaction, const std::string& c
 }
 
 std::vector<ChatInfo> ChatRepository::get_chats_for_user(const std::string& user_id) {
-  pqxx::work transaction{db_.connection()};
+  auto conn_guard = db_.connection();
+  pqxx::work transaction{*conn_guard.connection};
 
   pqxx::result rows = transaction.exec_params(get_chats_for_user_query, user_id);
 

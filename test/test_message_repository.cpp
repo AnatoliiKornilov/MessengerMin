@@ -23,7 +23,9 @@ class MessageRepoTest : public ::testing::Test {
     chat_repo = std::make_unique<ChatRepository>(*db);
     msg_repo = std::make_unique<MessageRepository>(*db);
 
-    pqxx::work txn{db->connection()};
+    auto conn_guard = db->connection();
+    pqxx::work txn{*conn_guard.connection};
+
     txn.exec("DELETE FROM messages");
     txn.exec("DELETE FROM chat_members");
     txn.exec("DELETE FROM chats");

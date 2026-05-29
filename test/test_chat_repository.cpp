@@ -1,14 +1,14 @@
-#include "../db/chat_repository.hpp"
-#include "../db/database.hpp"
-#include "../db/message_repository.hpp"
-
 #include <gtest/gtest.h>
-#include <pqxx/pqxx>
 
 #include <algorithm>
 #include <cstdlib>
 #include <memory>
+#include <pqxx/pqxx>
 #include <string>
+
+#include "../db/chat_repository.hpp"
+#include "../db/database.hpp"
+#include "../db/message_repository.hpp"
 
 class ChatRepoTest : public ::testing::Test {
  protected:
@@ -25,7 +25,8 @@ class ChatRepoTest : public ::testing::Test {
     chat_repo = std::make_unique<ChatRepository>(*db);
     msg_repo = std::make_unique<MessageRepository>(*db);
 
-    pqxx::work txn{db->connection()};
+    auto conn_guard = db->connection();
+    pqxx::work txn{*conn_guard.connection};
 
     txn.exec("DELETE FROM messages");
     txn.exec("DELETE FROM chat_members");
@@ -69,7 +70,9 @@ TEST_F(ChatRepoTest, PersonalChat_OrderInvariant) {
 TEST_F(ChatRepoTest, CreateGroup_ValidIdAndData) {
   std::string chat_id = chat_repo->create_group(alice_id, "Second Group");
 
-  pqxx::work txn{db->connection()};
+  auto conn_guard = db->connection();
+  pqxx::work txn{*conn_guard.connection};
+
   pqxx::row chat = txn.exec_params1(
       "SELECT is_group, chat_name FROM chats WHERE chat_id=$1", chat_id);
   EXPECT_TRUE(chat[0].as<bool>());
@@ -84,7 +87,9 @@ TEST_F(ChatRepoTest, CreateGroup_ValidIdAndData) {
 TEST_F(ChatRepoTest, AddMember_Success) {
   EXPECT_NO_THROW(chat_repo->add_member(group_chat_id, bob_id));
 
-  pqxx::work txn{db->connection()};
+  auto conn_guard = db->connection();
+  pqxx::work txn{*conn_guard.connection};
+
   pqxx::result res = txn.exec_params(
       "SELECT 1 FROM chat_members WHERE chat_id=$1 AND user_id=$2",
       group_chat_id, bob_id);
@@ -106,7 +111,9 @@ TEST_F(ChatRepoTest, RemoveMember_Success) {
   chat_repo->add_member(group_chat_id, bob_id);
   EXPECT_NO_THROW(chat_repo->remove_member(group_chat_id, bob_id));
 
-  pqxx::work txn{db->connection()};
+  auto conn_guard = db->connection();
+  pqxx::work txn{*conn_guard.connection};
+
   pqxx::result res = txn.exec_params(
       "SELECT 1 FROM chat_members WHERE chat_id=$1 AND user_id=$2",
       group_chat_id, bob_id);
