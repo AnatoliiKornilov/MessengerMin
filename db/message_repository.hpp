@@ -21,6 +21,12 @@ class MessageRepository {
                                              unsigned int limit = 50,
                                              unsigned int offset = 0);
 
+  void edit_message(const std::string& message_id, 
+                    const std::string& user_id, 
+                    const std::string& new_text);
+
+  void delete_message(const std::string& message_id, const std::string& user_id);
+
  private:
 
   bool check_membership(pqxx::work& transaction, 

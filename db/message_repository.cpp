@@ -10,7 +10,6 @@ std::pair<std::string, std::string> MessageRepository::send_message(
     const std::string& chat_id, 
     const std::string& sender_id,
     const std::string& text) {
-  std::unique_lock<std::mutex> lock = db_.lock();
   pqxx::work transaction{db_.connection()};
 
   if (!check_membership(transaction, chat_id, sender_id)) {
@@ -24,7 +23,6 @@ std::pair<std::string, std::string> MessageRepository::send_message(
   std::string sent_at = row[1].as<std::string>();
 
   transaction.commit();
-  lock.unlock();
 
   return {message_id, sent_at};
 }
@@ -33,14 +31,12 @@ std::vector<MessageData> MessageRepository::get_chat_messages(
     const std::string& chat_id, 
     unsigned int limit, 
     unsigned int offset) {
-  std::unique_lock<std::mutex> lock = db_.lock();
   pqxx::work transaction{db_.connection()};
 
   pqxx::result rows =
       transaction.exec_params(get_messages_query, chat_id, limit, offset);
 
   transaction.commit();
-  lock.unlock();
 
   std::vector<MessageData> messages;
 
@@ -64,4 +60,31 @@ bool MessageRepository::check_membership(
   pqxx::result result = transaction.exec_params(check_membership_query, chat_id, user_id);
 
   return !result.empty();
+}
+
+void MessageRepository::edit_message(
+    const std::string& message_id, 
+    const std::string& user_id, 
+    const std::string& new_text) {
+  pqxx::work transaction{db_.connection()};
+
+  pqxx::result res = transaction.exec_params(edit_message_query, new_text, message_id, user_id);
+
+  transaction.commit();
+
+  if (res.empty()) {
+    throw std::runtime_error("Message not found or not authorized");
+  }
+}
+
+void MessageRepository::delete_message(const std::string& message_id, const std::string& user_id) {
+  pqxx::work transaction{db_.connection()};
+
+  pqxx::result res = transaction.exec_params(delete_message_query, message_id, user_id);
+
+  transaction.commit();
+
+  if (res.empty()) {
+    throw std::runtime_error("Message not found or not authorized");
+  }
 }

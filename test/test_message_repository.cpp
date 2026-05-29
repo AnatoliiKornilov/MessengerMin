@@ -1,12 +1,12 @@
-#include "../db/chat_repository.hpp"
-#include "../db/database.hpp"
-#include "../db/message_repository.hpp"
-
 #include <gtest/gtest.h>
-#include <pqxx/pqxx>
 
 #include <cstdlib>
 #include <memory>
+#include <pqxx/pqxx>
+
+#include "../db/chat_repository.hpp"
+#include "../db/database.hpp"
+#include "../db/message_repository.hpp"
 
 class MessageRepoTest : public ::testing::Test {
  protected:
@@ -93,4 +93,46 @@ TEST_F(MessageRepoTest, GetMessages_Pagination) {
   EXPECT_EQ(page[0].text, "Msg 3");
   EXPECT_EQ(page[1].text, "Msg 4");
   EXPECT_EQ(page[2].text, "Msg 5");
+}
+
+TEST_F(MessageRepoTest, EditMessage_Success) {
+  auto [msg_id, time] =
+      msg_repo->send_message(personal_chat_id, alice_id, "Original");
+  ASSERT_NO_THROW(msg_repo->edit_message(msg_id, alice_id, "Modified"));
+
+  auto msgs = msg_repo->get_chat_messages(personal_chat_id, 1, 0);
+  ASSERT_EQ(msgs.size(), 1);
+  EXPECT_EQ(msgs[0].text, "Modified");
+}
+
+TEST_F(MessageRepoTest, EditMessage_NotAuthor_Throws) {
+  auto [msg_id, time] =
+      msg_repo->send_message(personal_chat_id, bob_id, "Bob's message");
+  EXPECT_THROW(msg_repo->edit_message(msg_id, alice_id, "Hacked"),
+               std::runtime_error);
+}
+
+TEST_F(MessageRepoTest, EditMessage_NotFound_Throws) {
+  EXPECT_THROW(msg_repo->edit_message("nonexistent-id", alice_id, "Text"),
+               std::runtime_error);
+}
+
+TEST_F(MessageRepoTest, DeleteMessage_Success) {
+  auto [msg_id, time] =
+      msg_repo->send_message(personal_chat_id, alice_id, "To delete");
+  ASSERT_NO_THROW(msg_repo->delete_message(msg_id, alice_id));
+
+  auto msgs = msg_repo->get_chat_messages(personal_chat_id);
+  EXPECT_TRUE(msgs.empty());
+}
+
+TEST_F(MessageRepoTest, DeleteMessage_NotAuthor_Throws) {
+  auto [msg_id, time] =
+      msg_repo->send_message(personal_chat_id, bob_id, "Bob's");
+  EXPECT_THROW(msg_repo->delete_message(msg_id, alice_id), std::runtime_error);
+}
+
+TEST_F(MessageRepoTest, DeleteMessage_NotFound_Throws) {
+  EXPECT_THROW(msg_repo->delete_message("nonexistent-id", alice_id),
+               std::runtime_error);
 }

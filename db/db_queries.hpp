@@ -74,3 +74,15 @@ const std::string get_chats_for_user_query =
   "JOIN chat_members cm ON c.chat_id = cm.chat_id "
   "WHERE cm.user_id = $1 "
   "ORDER BY last_time DESC NULLS LAST";
+
+const std::string edit_message_query = 
+  "UPDATE messages "
+  "SET text_message = $1 "
+  "WHERE message_id = $2 AND sender_id = $3 "
+  "RETURNING message_id";
+
+const std::string delete_message_query =
+  "DELETE "
+  "FROM messages "
+  "WHERE message_id = $1 AND sender_id = $2 "
+  "RETURNING message_id";

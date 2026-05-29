@@ -1,27 +1,23 @@
 #pragma once
 
+#include "connection_pool.hpp"
+
 #include <pqxx/pqxx>
 
 #include <memory>
-#include <mutex>
 #include <string>
 
 class DataBase {
  public:
 
-  explicit DataBase(const std::string& connection_string)
-      : conn_(std::make_unique<pqxx::connection>(connection_string)) {}
+  explicit DataBase(const std::string& connection_string, std::size_t pool_size = 100)
+      : pool_(std::make_unique<ConnectionPool>(connection_string, pool_size)) {}
 
   inline pqxx::connection& connection() {
-    return *conn_;
-  }
-
-  inline std::unique_lock<std::mutex> lock() {
-    return std::unique_lock<std::mutex>(mutex_);
+    return *pool_->connection().connection;
   }
 
  private:
 
-  std::unique_ptr<pqxx::connection> conn_;
-  std::mutex mutex_;
+  std::unique_ptr<ConnectionPool> pool_;
 };
