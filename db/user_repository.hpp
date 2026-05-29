@@ -14,6 +14,8 @@ class UserRepository {
 
   std::optional<std::string> find_user_by_name(const std::string& user_name);
 
+  std::optional<std::string> get_password_hash(const std::string& user_name);
+
  private:
 
   DataBase& db_;

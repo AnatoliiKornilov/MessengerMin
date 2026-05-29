@@ -12,6 +12,11 @@ const std::string find_user_by_name_query =
   "FROM users "
   "WHERE user_name = $1";
 
+const std::string get_password_hash_query =
+  "SELECT password_hash "
+  "FROM users "
+  "WHERE user_name = $1";
+
 const std::string find_personal_chat_query = 
   "SELECT c.chat_id "
   "FROM chats c "

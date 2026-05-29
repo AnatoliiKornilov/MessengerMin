@@ -34,3 +34,18 @@ std::optional<std::string> UserRepository::find_user_by_name(const std::string& 
 
   return user_id;
 }
+
+std::optional<std::string> UserRepository::get_password_hash(const std::string& user_name) {
+  auto conn_guard = db_.connection();
+  pqxx::work transaction{*conn_guard.connection};
+
+  pqxx::result result = transaction.exec_params(get_password_hash_query, user_name);
+
+  transaction.commit();
+
+  if (result.empty()) {
+    return std::nullopt;
+  }
+
+  return result[0][0].as<std::string>();
+}

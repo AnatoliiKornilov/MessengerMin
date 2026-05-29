@@ -54,3 +54,17 @@ TEST_F(UserRepoTest, CreateUser_DuplicateName_ThrowsSqlError) {
   EXPECT_THROW({ repo->create_user("charlie", "another_hash"); },
                pqxx::unique_violation);
 }
+
+TEST_F(UserRepoTest, GetPasswordHash_ExistingUser_ReturnsHash) {
+  std::string password = "secret123";
+  std::string user_id = repo->create_user("charlie", password);
+
+  auto retrieved_password = repo->get_password_hash("charlie");
+  ASSERT_TRUE(retrieved_password.has_value());
+  EXPECT_EQ(retrieved_password.value(), password);
+}
+
+TEST_F(UserRepoTest, GetPasswordHash_NonExistingUser_ReturnsNullopt) {
+  auto result = repo->get_password_hash("nonexistent");
+  EXPECT_FALSE(result.has_value());
+}
