@@ -9,7 +9,7 @@ void setup_auth_routes(httplib::Server& server, AppContext& context) {
     handle_register(request, response, context);
   });
 
-  server.Post("/api/login", [&](const httplib::Request& request, httplib::Response& response) {
+  server.Post("/api/auth/login", [&](const httplib::Request& request, httplib::Response& response) {
     handle_login(request, response, context);
   });
 
@@ -66,6 +66,21 @@ void setup_message_routes(httplib::Server& server, AppContext& context) {
 }
 
 void setup_routes(httplib::Server& server, AppContext& context) {
+  server.set_pre_routing_handler([](const httplib::Request& request, httplib::Response& response) {
+    response.set_header("Access-Control-Allow-Origin", "*");
+
+    response.set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+
+    response.set_header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+    if (request.method == "OPTIONS") {
+      response.status = 204;
+      return httplib::Server::HandlerResponse::Handled;
+    }
+
+    return httplib::Server::HandlerResponse::Unhandled;
+  });
+
   setup_auth_routes(server, context);
   setup_chat_routes(server, context);
   setup_message_routes(server, context);
