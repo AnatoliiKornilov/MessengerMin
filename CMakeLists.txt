@@ -50,6 +50,7 @@ set(SERVER_LOGIC_SOURCES
     handlers/auth_handlers.cpp
     handlers/chat_handlers.cpp
     handlers/message_handlers.cpp
+    src/app.cpp
 )
 add_library(server_logic STATIC ${SERVER_LOGIC_SOURCES})
 target_include_directories(server_logic
@@ -72,6 +73,9 @@ set(DB_TEST_LIBS
     GTest::gtest_main
     PkgConfig::PQXX
 )
+
+add_executable(messenger_server src/main.cpp)
+target_link_libraries(messenger_server PRIVATE server_logic)
 
 add_executable(test_user_repository test/test_user_repository.cpp)
 target_link_libraries(test_user_repository PRIVATE ${DB_TEST_LIBS})
