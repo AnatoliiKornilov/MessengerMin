@@ -1,133 +1,12 @@
-#include "chat_handlers.hpp"
+#include "message_handlers.hpp"
 
 #include "../src/middleware/auth_middleware.hpp"
 
 #include <nlohmann/json.hpp>
 
-#include <exception>
-
 using JSON = nlohmann::json;
 
-void handle_create_personal_chat(
-    const httplib::Request& request,
-    httplib::Response& response, 
-    AppContext& context) {
-  std::string token = extract_token(request);
-
-  std::optional<std::string> user_id = extract_user_id_from_token(token, context.jwt_secret);
-
-  if (!user_id.has_value()) {
-    response.status = 401;
-    response.set_content(R"({"error":"Invalid token"})", "application/json");
-    return;
-  }
-
-  try {
-    JSON body = nlohmann::json::parse(request.body);
-
-    std::string target_user_name = body.at("user_name");
-
-    std::optional<std::string> target_id = context.users.find_user_by_name(target_user_name);
-
-    if (!target_id.has_value()) {
-      response.status = 404;
-      response.set_content(R"({"error":"User not found"})", "application/json");
-      return;
-    }
-
-    std::string chat_id = context.chats.create_personal_chat(*user_id, *target_id);
-
-    response.status = 201;
-
-    JSON response_json = {{"chat_id", chat_id}};
-
-    response.set_content(response_json.dump(), "application/json");
-  } catch (const std::exception& exception) {
-    response.status = 400;
-
-    JSON response_json = {{"error", exception.what()}};
-
-    response.set_content(response_json.dump(), "application/json");
-  }
-}
-
-void handle_create_group(
-    const httplib::Request& request, 
-    httplib::Response& response,
-    AppContext& context) {
-  std::string token = extract_token(request);
-
-  std::optional<std::string> user_id = extract_user_id_from_token(token, context.jwt_secret);
-
-  if (!user_id.has_value()) {
-    response.status = 401;
-    response.set_content(R"({"error":"Invalid token"})", "application/json");
-    return;
-  }
-
-  try {
-    JSON body = nlohmann::json::parse(request.body);
-
-    std::string group_name = body.at("name");
-    std::string chat_id = context.chats.create_group(*user_id, group_name);
-
-    response.status = 201;
-
-    JSON response_json = {{"chat_id", chat_id}};
-
-    response.set_content(response_json.dump(), "application/json");
-  } catch (const std::exception& exception) {
-    response.status = 400;
-
-    JSON response_json = {{"error", exception.what()}};
-
-    response.set_content(response_json.dump(), "application/json");
-  }
-}
-
-void handle_get_chats(
-    const httplib::Request& request, 
-    httplib::Response& response,
-    AppContext& context) {
-  std::string token = extract_token(request);
-
-  std::optional<std::string> user_id = extract_user_id_from_token(token, context.jwt_secret);
-
-  if (!user_id.has_value()) {
-    response.status = 401;
-    response.set_content(R"({"error":"Invalid token"})", "application/json");
-    return;
-  }
-
-  try {
-    std::vector<ChatInfo> chats = context.chats.get_chats_for_user(*user_id);
-
-    JSON arr = nlohmann::json::array();
-
-    for (const ChatInfo& chat : chats) {
-      JSON object;
-
-      object["chat_id"] = chat.chat_id;
-      object["is_group"] = chat.is_group;
-      object["name"] = chat.name;
-      object["last_message"] = chat.last_message;
-      object["last_time"] = chat.last_time;
-
-      arr.push_back(object);
-    }
-
-    response.status = 200;
-    response.set_content(arr.dump(), "application/json");
-  } catch (const std::exception& exception) {
-    response.status = 400;
-
-    JSON response_json = {{"error", exception.what()}};
-
-    response.set_content(response_json.dump(), "application/json");
-  }
-}
-
-void handle_add_member(
+void handle_send_message(
     const httplib::Request& request, 
     httplib::Response& response,
     AppContext& context, 
@@ -145,20 +24,21 @@ void handle_add_member(
   try {
     JSON body = nlohmann::json::parse(request.body);
 
-    std::string new_member_user_name = body.at("user_name");
+    std::string text = body.at("text");
 
-    std::optional<std::string> new_member_id = context.users.find_user_by_name(new_member_user_name);
+    auto [message_id, sent_time] = context.messages.send_message(chat_id, *user_id, text);
 
-    if (!new_member_id.has_value()) {
-      response.status = 404;
-      response.set_content(R"({"error":"User not found"})", "application/json");
-      return;
-    }
+    response.status = 201;
 
-    context.chats.add_member(chat_id, *new_member_id);
+    JSON response_json = {{"message_id", message_id}, {"sent_at", sent_time}};
 
-    response.status = 200;
-    response.set_content(R"({"status":"ok"})", "application/json");
+    response.set_content(response_json.dump(), "application/json");
+  } catch (const std::runtime_error& exception) {
+    response.status = 403;
+
+    JSON response_json = {{"error", exception.what()}};
+
+    response.set_content(response_json.dump(), "application/json");
   } catch (const std::exception& exception) {
     response.status = 400;
 
@@ -168,12 +48,65 @@ void handle_add_member(
   }
 }
 
-void handle_remove_member(
+void handle_get_messages(
     const httplib::Request& request, 
     httplib::Response& response,
     AppContext& context, 
-    const std::string& chat_id,
-    const std::string& member_id) {
+    const std::string& chat_id) {
+  std::string token = extract_token(request);
+
+  std::optional<std::string> user_id = extract_user_id_from_token(token, context.jwt_secret);
+
+  if (!user_id.has_value()) {
+    response.status = 401;
+    response.set_content(R"({"error":"Invalid token"})", "application/json");
+    return;
+  }
+
+  int limit = 50;
+  int offset = 0;
+
+  if (request.has_param("limit")) { 
+    limit = std::stoi(request.get_param_value("limit")); 
+  }
+
+  if (request.has_param("offset")) {
+    offset = std::stoi(request.get_param_value("offset"));
+  }
+
+  try {
+    std::vector<MessageData> messages = context.messages.get_chat_messages(chat_id, limit, offset);
+
+    JSON arr = nlohmann::json::array();
+
+    for (const MessageData& message : messages) {
+      JSON object;
+
+      object["message_id"] = message.message_id;
+      object["sender_id"] = message.sender_id;
+      object["sender_name"] = message.sender_name;
+      object["text"] = message.text;
+      object["sent_at"] = message.sent_at;
+
+      arr.push_back(object);
+    }
+
+    response.status = 200;
+    response.set_content(arr.dump(), "application/json");
+  } catch (const std::exception& exception) {
+    response.status = 400;
+
+    JSON response_json = {{"error", exception.what()}};
+
+    response.set_content(response_json.dump(), "application/json");
+  }
+}
+
+void handle_edit_message(
+    const httplib::Request& request, 
+    httplib::Response& response,
+    AppContext& context, 
+    const std::string& message_id) {
   std::string token = extract_token(request);
 
   std::optional<std::string> user_id = extract_user_id_from_token(token, context.jwt_secret);
@@ -185,10 +118,55 @@ void handle_remove_member(
   }
 
   try {
-    context.chats.remove_member(chat_id, member_id);
+    JSON body = nlohmann::json::parse(request.body);
+
+    std::string new_text = body.at("text");
+
+    context.messages.edit_message(message_id, *user_id, new_text);
 
     response.status = 200;
     response.set_content(R"({"status":"ok"})", "application/json");
+  } catch (const std::runtime_error& exception) {
+    response.status = 403;
+
+    JSON response_json = {{"error", exception.what()}};
+
+    response.set_content(response_json.dump(), "application/json");
+  } catch (const std::exception& exception) {
+    response.status = 400;
+
+    JSON response_json = {{"error", exception.what()}};
+
+    response.set_content(response_json.dump(), "application/json");
+  }
+}
+
+void handle_delete_message(
+    const httplib::Request& request, 
+    httplib::Response& response,
+    AppContext& context, 
+    const std::string& message_id) {
+  std::string token = extract_token(request);
+
+  std::optional<std::string> user_id = extract_user_id_from_token(token, context.jwt_secret);
+
+  if (!user_id.has_value()) {
+    response.status = 401;
+    response.set_content(R"({"error":"Invalid token"})", "application/json");
+    return;
+  }
+
+  try {
+    context.messages.delete_message(message_id, *user_id);
+
+    response.status = 200;
+    response.set_content(R"({"status":"ok"})", "application/json");
+  } catch (const std::runtime_error& exception) {
+    response.status = 403;
+
+    JSON response_json = {{"error", exception.what()}};
+
+    response.set_content(response_json.dump(), "application/json");
   } catch (const std::exception& exception) {
     response.status = 400;
 

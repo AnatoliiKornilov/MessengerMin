@@ -49,6 +49,7 @@ set(SERVER_LOGIC_SOURCES
     src/middleware/auth_middleware.cpp
     handlers/auth_handlers.cpp
     handlers/chat_handlers.cpp
+    handlers/message_handlers.cpp
 )
 add_library(server_logic STATIC ${SERVER_LOGIC_SOURCES})
 target_include_directories(server_logic
@@ -86,3 +87,6 @@ target_link_libraries(test_auth_handlers PRIVATE server_logic GTest::gtest_main)
 
 add_executable(test_chat_handlers test/test_chat_handlers.cpp)
 target_link_libraries(test_chat_handlers PRIVATE server_logic GTest::gtest_main)
+
+add_executable(test_message_handlers test/test_message_handlers.cpp)
+target_link_libraries(test_message_handlers PRIVATE server_logic GTest::gtest_main)

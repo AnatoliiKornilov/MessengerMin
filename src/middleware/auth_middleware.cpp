@@ -37,3 +37,13 @@ std::optional<std::string> extract_refresh_token_from_cookie(const httplib::Requ
   std::size_t end = cookie_header.find(';', pos);
   return cookie_header.substr(pos, end - pos);
 }
+
+std::string extract_token(const httplib::Request& request) {
+  std::string auth = request.get_header_value("Authorization");
+
+  if (auth.substr(0, 7) == "Bearer ") { 
+    return auth.substr(7); 
+  }
+
+  return "";
+}
