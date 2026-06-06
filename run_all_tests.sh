@@ -13,4 +13,6 @@ cmake --build .
 ./test_chat_repository
 ./test_message_repository
 
+./test_auth_handlers
+
 cd ..
