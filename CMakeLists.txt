@@ -48,6 +48,7 @@ target_link_libraries(db_lib PUBLIC PkgConfig::PQXX)
 set(SERVER_LOGIC_SOURCES
     src/middleware/auth_middleware.cpp
     handlers/auth_handlers.cpp
+    handlers/chat_handlers.cpp
 )
 add_library(server_logic STATIC ${SERVER_LOGIC_SOURCES})
 target_include_directories(server_logic
@@ -81,8 +82,7 @@ add_executable(test_message_repository test/test_message_repository.cpp)
 target_link_libraries(test_message_repository PRIVATE ${DB_TEST_LIBS})
 
 add_executable(test_auth_handlers test/test_auth_handlers.cpp)
-target_link_libraries(test_auth_handlers
-    PRIVATE
-        server_logic
-        GTest::gtest_main
-)
+target_link_libraries(test_auth_handlers PRIVATE server_logic GTest::gtest_main)
+
+add_executable(test_chat_handlers test/test_chat_handlers.cpp)
+target_link_libraries(test_chat_handlers PRIVATE server_logic GTest::gtest_main)
