@@ -102,7 +102,7 @@ void handle_login(
     std::string cookie = 
         "refresh_token=" + 
         refresh_token +
-        "; Path=/api/auth; HttpOnly; SameSite=Strict; Max-Age=" +
+        "; Path=/api/auth; HttpOnly; SameSite=Strict; Secure; Max-Age=" +
         std::to_string(60 * 60 * 24 * 7);
 
     response.set_header("Set-Cookie", cookie);
@@ -158,7 +158,7 @@ void handle_refresh(
     std::string cookie = 
         "refresh_token=" + 
         new_refresh +
-        "; Path=/api/auth; HttpOnly; SameSite=Strict; Max-Age=" +
+        "; Path=/api/auth; HttpOnly; SameSite=Strict; Secure; Max-Age=" +
         std::to_string(60 * 60 * 24 * 7);
 
     response.set_header("Set-Cookie", cookie);
