@@ -197,3 +197,40 @@ void handle_remove_member(
     response.set_content(response_json.dump(), "application/json");
   }
 }
+
+void handle_find_user(
+    const httplib::Request& request, 
+    httplib::Response& response, 
+    AppContext& context) {
+  std::string token = extract_token(request);
+
+  std::optional<std::string> user_id = extract_user_id_from_token(token, context.jwt_secret);
+
+  if (!user_id.has_value()) {
+    response.status = 401;
+    response.set_content(R"({"error":"Invalid token"})", "application/json");
+    return;
+  }
+
+  std::string name = request.get_param_value("name");
+
+  if (name.empty()) {
+    response.status = 400;
+    response.set_content(R"({"error":"Missing 'name' parameter"})", "application/json");
+    return;
+  }
+
+  std::optional<std::string> found = context.users.find_user_by_name(name);
+
+  if (!found.has_value()) {
+    response.status = 404;
+    response.set_content(R"({"error":"User not found"})", "application/json");
+    return;
+  }
+
+  response.status = 200;
+
+  JSON response_json = {{"user_id", *found}};
+  
+  response.set_content(response_json.dump(), "application/json");
+}

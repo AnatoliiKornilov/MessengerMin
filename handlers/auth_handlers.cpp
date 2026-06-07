@@ -93,7 +93,7 @@ void handle_login(
       .set_expires_at(refresh_exp)
       .sign(jwt::algorithm::hs256{context.jwt_secret});
 
-    JSON response_json = {{"access_token", access_token}};
+    JSON response_json = {{"access_token", access_token}, {"user_id", user_id}};
 
     response.status = 200;
 

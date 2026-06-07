@@ -28,3 +28,7 @@ void handle_remove_member(const httplib::Request& request,
                           AppContext& context,
                           const std::string& chat_id,
                           const std::string& member_id);
+
+void handle_find_user(const httplib::Request& request,
+                      httplib::Response& response,
+                      AppContext& context);

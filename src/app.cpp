@@ -41,6 +41,10 @@ void setup_chat_routes(httplib::Server& server, AppContext& context) {
     std::string member_id = request.matches[2];
     handle_remove_member(request, response, context, chat_id, member_id);
   });
+
+  server.Get("/api/users/by-name", [&](const httplib::Request& request, httplib::Response& response) {
+    handle_find_user(request, response, context);
+  });
 }
 
 void setup_message_routes(httplib::Server& server, AppContext& context) {
