@@ -1,0 +1,35 @@
+:root {
+  --bg-color: #1e1e2f;
+  --sidebar-bg: #262638;
+  --white: #2d2d44;
+  --primary: #7c8cf0;
+  --primary-dark: #6a7ae0;
+  --text-color: #e0e0e0;
+  --text-secondary: #aaa;
+  --border: #3e3e55;
+  --message-own: #2a5c3a;
+  --message-other: #3a3a52;
+  --message-own-text: #e0e0e0;
+  --input-bg: #1f1f2e;
+  --error: #e74c3c;
+  --success: #2ecc71;
+  --shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+body.light-theme {
+  --bg-color: #e6ebee;
+  --sidebar-bg: #f0f2f5;
+  --white: #fff;
+  --primary: #6c8ce0;
+  --primary-dark: #5a7ad0;
+  --text-color: #333;
+  --text-secondary: #666;
+  --border: #ddd;
+  --message-own: #dcf8c6;
+  --message-other: #f1f0f0;
+  --message-own-text: #333;
+  --input-bg: #fff;
+  --error: #e74c3c;
+  --success: #2ecc71;
+  --shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
