@@ -27,7 +27,7 @@ set(CMAKE_DISABLE_FIND_PACKAGE_jsoncons ON CACHE BOOL "Disable jsoncons search" 
 set(JWT_DISABLE_JSONCONS ON CACHE BOOL "Disable jsoncons" FORCE)
 FetchContent_MakeAvailable(jwt-cpp)
 
-// find_package(nlohmann_json REQUIRED)
+# find_package(nlohmann_json REQUIRED)
 
 add_library(db_lib STATIC
     db/user_repository.cpp
