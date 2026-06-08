@@ -23,6 +23,7 @@ export async function loadChats() {
           renderChatHeader(chat, () => handleAddMember(chatId), () => handleRemoveMember(chatId));
         }
         onChatSelected(chatId);
+        openChatOnMobile();
     });
 
     const currentId = getActiveChatId();
@@ -36,6 +37,7 @@ export async function loadChats() {
       renderChatHeader(first, () => handleAddMember(first.chat_id), () => handleRemoveMember(first.chat_id));
 
       onChatSelected(first.chat_id);
+      openChatOnMobile();
     }
 
     markActiveChat(getActiveChatId());
@@ -133,11 +135,40 @@ async function handleRemoveMember(chatId) {
 function handleLogout() {
   clearAuth();
   stopChatPolling();
+  closeChatOnMobile();
   showScreen('auth-screen');
+}
+
+
+function isMobile() {
+  return window.innerWidth <= 768;
+}
+
+function openChatOnMobile() {
+  if (!isMobile()) return;
+  const chatScreen = document.getElementById('chat-screen');
+  chatScreen.classList.add('chat-open');
+}
+
+function closeChatOnMobile() {
+  const chatScreen = document.getElementById('chat-screen');
+  chatScreen.classList.remove('chat-open');
 }
 
 export function initChatControls() {
   document.getElementById('new-personal-chat').addEventListener('click', handleNewPersonalChat);
   document.getElementById('new-group').addEventListener('click', handleNewGroup);
   document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+  document.getElementById('back-to-chats-btn').addEventListener('click', () => {
+    closeChatOnMobile();
+  });
+
+  window.addEventListener('resize', () => {
+    if (!isMobile()) {
+      closeChatOnMobile();
+    }
+  });
+
+  closeChatOnMobile();
 }

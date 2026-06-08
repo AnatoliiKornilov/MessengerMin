@@ -1,6 +1,7 @@
 import { getToken, setToken, clearAuth } from './authService.js';
 import { showNotification } from '../ui/notifications.js';
 
+// const API_BASE = 'http://localhost:8080/api';
 const API_BASE = '/api';
 
 let isRefreshing = false;

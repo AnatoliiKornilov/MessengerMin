@@ -82,16 +82,23 @@ export function renderChatHeader(chat, onAddMember, onRemoveMember) {
     return;
   }
 
-  headerArea.innerHTML = `
-    <h2>${chat.name || 'Chat'}</h2>
-    ${chat.is_group ? `
-        <div class="group-actions">
-            <button id="add-member-btn">Добавить участника</button>
-            <button id="remove-member-btn">Удалить участника</button>
-        </div>` : ''}`;
+  const nameEl = headerArea.querySelector('h2');
+  const actionsEl = headerArea.querySelector('.group-actions');
 
-  if (chat.is_group) {
-    document.getElementById('add-member-btn')?.addEventListener('click', onAddMember);
-    document.getElementById('remove-member-btn')?.addEventListener('click', onRemoveMember);
+  if (nameEl !== null) {
+    nameEl.textContent = chat.name || 'Без названия';
+  }
+
+  if (actionsEl) {
+    if (chat.is_group) {
+      actionsEl.innerHTML = `
+        <button id="add-member-btn">Добавить участника</button>
+        <button id="remove-member-btn">Удалить участника</button>`;
+
+      document.getElementById('add-member-btn')?.addEventListener('click', onAddMember);
+      document.getElementById('remove-member-btn')?.addEventListener('click', onRemoveMember);
+    } else {
+      actionsEl.innerHTML = '';
+    }
   }
 }

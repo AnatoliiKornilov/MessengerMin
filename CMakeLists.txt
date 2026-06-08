@@ -18,7 +18,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(httplib)
 
-# -- jwt-cpp (он сам подтянет nlohmann/json) --
 FetchContent_Declare(
     jwt-cpp
     GIT_REPOSITORY https://github.com/Thalhammer/jwt-cpp.git
@@ -28,7 +27,8 @@ set(CMAKE_DISABLE_FIND_PACKAGE_jsoncons ON CACHE BOOL "Disable jsoncons search" 
 set(JWT_DISABLE_JSONCONS ON CACHE BOOL "Disable jsoncons" FORCE)
 FetchContent_MakeAvailable(jwt-cpp)
 
-# -- db_lib --
+find_package(nlohmann_json REQUIRED)
+
 add_library(db_lib STATIC
     db/user_repository.cpp
     db/chat_repository.cpp
@@ -37,7 +37,6 @@ add_library(db_lib STATIC
 target_include_directories(db_lib PUBLIC db)
 target_link_libraries(db_lib PUBLIC PkgConfig::PQXX)
 
-# -- server_logic --
 set(SERVER_LOGIC_SOURCES
     src/middleware/auth_middleware.cpp
     handlers/auth_handlers.cpp
@@ -58,9 +57,8 @@ target_link_libraries(server_logic
         PkgConfig::SODIUM
         httplib::httplib
         jwt-cpp
-        nlohmann_json::nlohmann_json   # <- цель уже создана jwt-cpp
+        nlohmann_json::nlohmann_json
 )
 
-# -- сервер --
 add_executable(messenger_server src/main.cpp)
 target_link_libraries(messenger_server PRIVATE server_logic)
