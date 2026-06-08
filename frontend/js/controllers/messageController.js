@@ -114,8 +114,6 @@ function setupScroll(chatId) {
 }
 
 export function onChatSelected(chatId) {
-  currentChatId = chatId;
-
   allMessages = [];
 
   loadMessages(chatId, false);
