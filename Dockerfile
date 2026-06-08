@@ -15,7 +15,7 @@ RUN cmake --build build --target messenger_server -j$(nproc)
 FROM ubuntu:24.04
 
 RUN apt-get update && apt-get install -y \
-    libpqxx-6.4 libsodium23 libssl3 \
+    libpqxx-dev libsodium23 libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/build/messenger_server /usr/local/bin/messenger_server
