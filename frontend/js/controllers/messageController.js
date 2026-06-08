@@ -5,24 +5,115 @@ import { getUser } from '../services/authService.js';
 import { showNotification } from '../ui/notifications.js';
 
 let messagePollingIntervalId = null;
+let allMessages = [];
+let isLoadingOlder = false;
+let onScrollHandler = null;
 
-export async function loadMessages(chatId) {
+const LIMIT = 50;
+
+export async function loadMessages(chatId, appendOlder = false) {
+  if (appendOlder) {
+    if (isLoadingOlder) {
+      return;
+    }
+
+    isLoadingOlder = true;
+
+    const offset = allMessages.length;
+
+    try {
+      const older = await getMessages(chatId, LIMIT, offset);
+
+      if (older.length > 0) {
+        older.reverse();
+
+        allMessages = older.concat(allMessages);
+
+        const user = getUser();
+
+        renderMessages(allMessages, user?.user_id || null, handleEditMessage, handleDeleteMessage, false);
+
+        const container = document.getElementById('messages');
+        if (container) {
+          container.scrollTop += container.scrollHeight - (container.scrollHeight - 50);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      isLoadingOlder = false;
+    }
+    return;
+  }
+
   try {
-    const messages = await getMessages(chatId);
+    const latest = await getMessages(chatId, LIMIT, 0);
+
+    latest.reverse();
+
+    mergeMessages(latest);
 
     const user = getUser();
 
-    renderMessages(messages, user?.user_id || null, handleEditMessage, handleDeleteMessage);
-  } catch (e) { 
-    console.error('Ошибка при загрузке сообщений:', e); 
+    renderMessages(allMessages, user?.user_id || null, handleEditMessage, handleDeleteMessage, false);
+  } catch (e) {
+    console.error(e);
   }
+}
+
+function mergeMessages(latest) {
+  const existingMap = new Map(allMessages.map(m => [m.message_id, m]));
+
+  for (const msg of latest) {
+    if (!existingMap.has(msg.message_id)) {
+      allMessages.push(msg);
+    } else {
+      const idx = allMessages.findIndex(m => m.message_id === msg.message_id);
+
+      if (idx !== -1) {
+        allMessages[idx] = msg;
+      }
+    }
+  }
+
+  allMessages.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+}
+
+function setupScroll(chatId) {
+  const container = document.getElementById('messages');
+
+  if (!container) {
+    return;
+  }
+
+  if (onScrollHandler) {
+    container.removeEventListener('scroll', onScrollHandler);
+  }
+
+  onScrollHandler = () => {
+    if (container.scrollTop === 0) {
+      loadMessages(chatId, true);
+    }
+  };
+
+  container.addEventListener('scroll', onScrollHandler);
+}
+
+export function onChatSelected(chatId) {
+  allMessages = [];
+
+  loadMessages(chatId, false);
+
+  setupScroll(chatId);
+
+  startMessagePolling(chatId);
 }
 
 function startMessagePolling(chatId) {
   stopMessagePolling();
 
   if (chatId) {
-    messagePollingIntervalId = setInterval(() => loadMessages(chatId), 1000);
+    messagePollingIntervalId = setInterval(() => loadMessages(chatId, false), 1000);
   }
 }
 
@@ -34,12 +125,7 @@ function stopMessagePolling() {
   }
 }
 
-export function onChatSelected(chatId) {
-  loadMessages(chatId);
-  startMessagePolling(chatId);
-}
-
-export async function handleSendMessage() {
+export function handleSendMessage() {
   const input = document.getElementById('message-input');
   const text = input.value.trim();
 
@@ -54,19 +140,16 @@ export async function handleSendMessage() {
     return;
   }
 
-  try {
-    await sendMessage(chatId, text);
-
-    input.value = '';
-
-    loadMessages(chatId);
-  } catch (e) { 
-    console.error(e); 
-  }
+  sendMessage(chatId, text)
+    .then(() => {
+      input.value = '';
+      loadMessages(chatId, false);
+    })
+    .catch(e => console.error(e));
 }
 
 async function handleEditMessage(messageId, oldText) {
-  const newText = prompt('Редактировать сообщение:', oldText);
+  const newText = prompt('Изменить сообщение:', oldText);
 
   if (!newText || newText === oldText) {
     return;
@@ -77,14 +160,16 @@ async function handleEditMessage(messageId, oldText) {
 
     const chatId = getActiveChatId();
 
-    if (chatId) loadMessages(chatId);
-  } catch (e) { 
-    console.error(e); 
+    if (chatId) {
+      loadMessages(chatId, false);
+    }
+  } catch (e) {
+    console.error(e);
   }
 }
 
 async function handleDeleteMessage(messageId) {
-  if (!confirm('Точно удалить это сообщение?')) {
+  if (!confirm('Удалить сообщение?')) {
     return;
   }
 
@@ -94,11 +179,10 @@ async function handleDeleteMessage(messageId) {
     const chatId = getActiveChatId();
 
     if (chatId) {
-      loadMessages(chatId);
+      loadMessages(chatId, false);
     }
-
-  } catch (e) { 
-    console.error(e); 
+  } catch (e) {
+    console.error(e);
   }
 }
 

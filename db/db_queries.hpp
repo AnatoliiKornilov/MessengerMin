@@ -62,7 +62,7 @@ const std::string get_messages_query =
   "FROM messages m "
   "JOIN users u ON m.sender_id = u.user_id "
   "WHERE m.chat_id = $1 "
-  "ORDER BY m.sent_time ASC "
+  "ORDER BY m.sent_time DESC "
   "LIMIT $2 "
   "OFFSET $3 ";
 

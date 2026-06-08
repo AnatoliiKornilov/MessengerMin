@@ -27,10 +27,11 @@ export function markActiveChat(chatId) {
   });
 }
 
-export function renderMessages(messages, currentUserId, onEdit, onDelete) {
+export function renderMessages(messages, currentUserId, onEdit, onDelete, prepend = false) {
   const container = document.getElementById('messages');
+  const wasAtBottom = (container.scrollTop + container.clientHeight + 50) >= container.scrollHeight;
 
-  container.innerHTML = '';
+  const fragment = document.createDocumentFragment();
 
   messages.forEach(msg => {
     const div = document.createElement('div');
@@ -48,29 +49,41 @@ export function renderMessages(messages, currentUserId, onEdit, onDelete) {
               <button class="delete-msg-btn" data-id="${msg.message_id}">Удалить</button>
           </div>` : ''}`;
 
-    container.appendChild(div);
+    fragment.appendChild(div);
   });
 
-  container.scrollTop = container.scrollHeight;
+  if (prepend) {
+    const prevScrollHeight = container.scrollHeight;
 
-  if (onEdit) {
-    document.querySelectorAll('.edit-msg-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const msgId = btn.dataset.id;
+    container.prepend(fragment);
 
-        const oldText = btn.dataset.text;
+    const newScrollHeight = container.scrollHeight;
 
-        onEdit(msgId, oldText);
-      });
-    });
+    container.scrollTop += newScrollHeight - prevScrollHeight;
+  } else {
+    container.innerHTML = '';
+
+    container.appendChild(fragment);
+
+    if (wasAtBottom) {
+      container.scrollTop = container.scrollHeight;
+    }
   }
 
-  if (onDelete) {
-    document.querySelectorAll('.delete-msg-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+  if (onEdit) {
+    container.querySelectorAll('.edit-msg-btn').forEach(btn => {
+      btn.onclick = () => {
         const msgId = btn.dataset.id;
-        onDelete(msgId);
-      });
+        const oldText = btn.dataset.text;
+        onEdit(msgId, oldText);
+      };
+    });
+  }
+  if (onDelete) {
+    container.querySelectorAll('.delete-msg-btn').forEach(btn => {
+      btn.onclick = () => {
+        onDelete(btn.dataset.id);
+      };
     });
   }
 }

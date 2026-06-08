@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "rate_limiter.hpp"
 
 #include "../handlers/auth_handlers.hpp"
 #include "../handlers/chat_handlers.hpp"
@@ -70,6 +71,8 @@ void setup_message_routes(httplib::Server& server, AppContext& context) {
 }
 
 void setup_routes(httplib::Server& server, AppContext& context) {
+  static RateLimiter limiter;
+
   server.set_pre_routing_handler([](const httplib::Request& request, httplib::Response& response) {
     response.set_header("Access-Control-Allow-Origin", "*");
 
@@ -79,6 +82,16 @@ void setup_routes(httplib::Server& server, AppContext& context) {
 
     if (request.method == "OPTIONS") {
       response.status = 204;
+      return httplib::Server::HandlerResponse::Handled;
+    }
+
+    std::string ip = request.remote_addr;
+
+    if (!limiter.is_allowed(ip)) {
+      response.status = 429;
+
+      response.set_content("{\"error\":\"Too many requests\"}", "application/json");
+      
       return httplib::Server::HandlerResponse::Handled;
     }
 
