@@ -22,6 +22,8 @@ class ChatRepository {
 
   std::vector<ChatInfo> get_chats_for_user(const std::string& user_id);
 
+  bool is_member(const std::string& chat_id, const std::string& user_id);
+
  private:
 
   bool is_group_chat(pqxx::work& transaction, const std::string& chat_id);

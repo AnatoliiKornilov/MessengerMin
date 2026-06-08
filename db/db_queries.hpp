@@ -91,3 +91,8 @@ const std::string delete_message_query =
   "FROM messages "
   "WHERE message_id = $1 AND sender_id = $2 "
   "RETURNING message_id";
+
+const std::string is_member_query =
+  "SELECT 1 "
+  "FROM chat_members "
+  "WHERE chat_id = $1 AND user_id = $2";

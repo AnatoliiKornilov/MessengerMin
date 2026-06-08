@@ -142,6 +142,12 @@ void handle_add_member(
     return;
   }
 
+  if (!context.chats.is_member(chat_id, *user_id)) {
+    response.status = 403;
+    response.set_content(R"({"error":"Access denied"})", "application/json");
+    return;
+  }
+
   try {
     JSON body = nlohmann::json::parse(request.body);
 
@@ -181,6 +187,12 @@ void handle_remove_member(
   if (!user_id.has_value()) {
     response.status = 401;
     response.set_content(R"({"error":"Invalid token"})", "application/json");
+    return;
+  }
+
+  if (!context.chats.is_member(chat_id, *user_id)) {
+    response.status = 403;
+    response.set_content(R"({"error":"Access denied"})", "application/json");
     return;
   }
 

@@ -85,7 +85,10 @@ void setup_routes(httplib::Server& server, AppContext& context) {
       return httplib::Server::HandlerResponse::Handled;
     }
 
-    std::string ip = request.remote_addr;
+    std::string ip = request.get_header_value("X-Real-IP");
+    if (ip.empty()) {
+      ip = request.remote_addr;
+    }
 
     if (!limiter.is_allowed(ip)) {
       response.status = 429;

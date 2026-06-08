@@ -63,6 +63,12 @@ void handle_get_messages(
     return;
   }
 
+  if (!context.chats.is_member(chat_id, *user_id)) {
+    response.status = 403;
+    response.set_content(R"({"error":"Access denied"})", "application/json");
+    return;
+  }
+
   int limit = 50;
   int offset = 0;
 

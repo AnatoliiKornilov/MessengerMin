@@ -110,3 +110,14 @@ std::vector<ChatInfo> ChatRepository::get_chats_for_user(const std::string& user
 
   return chats;
 }
+
+bool ChatRepository::is_member(const std::string& chat_id, const std::string& user_id) {
+    auto conn_guard = db_.connection();
+    pqxx::work transaction{*conn_guard.connection};
+
+    pqxx::result res = transaction.exec_params(is_member_query, chat_id, user_id);
+
+    transaction.commit();
+
+    return !res.empty();
+}

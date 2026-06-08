@@ -12,6 +12,10 @@ let onScrollHandler = null;
 const LIMIT = 50;
 
 export async function loadMessages(chatId, appendOlder = false) {
+  if (chatId !== getActiveChatId()) {
+    return;
+  }
+
   if (appendOlder) {
     if (isLoadingOlder) {
       return;
@@ -24,6 +28,10 @@ export async function loadMessages(chatId, appendOlder = false) {
     try {
       const older = await getMessages(chatId, LIMIT, offset);
 
+      if (chatId !== getActiveChatId()) {
+        return;
+      }
+
       if (older.length > 0) {
         older.reverse();
 
@@ -34,6 +42,7 @@ export async function loadMessages(chatId, appendOlder = false) {
         renderMessages(allMessages, user?.user_id || null, handleEditMessage, handleDeleteMessage, false);
 
         const container = document.getElementById('messages');
+
         if (container) {
           container.scrollTop += container.scrollHeight - (container.scrollHeight - 50);
         }
@@ -43,11 +52,16 @@ export async function loadMessages(chatId, appendOlder = false) {
     } finally {
       isLoadingOlder = false;
     }
+
     return;
   }
 
   try {
     const latest = await getMessages(chatId, LIMIT, 0);
+
+    if (chatId !== getActiveChatId()) {
+      return;
+    }
 
     latest.reverse();
 
@@ -100,6 +114,8 @@ function setupScroll(chatId) {
 }
 
 export function onChatSelected(chatId) {
+  currentChatId = chatId;
+
   allMessages = [];
 
   loadMessages(chatId, false);
@@ -127,6 +143,7 @@ function stopMessagePolling() {
 
 export function handleSendMessage() {
   const input = document.getElementById('message-input');
+
   const text = input.value.trim();
 
   if (!text) {
@@ -158,11 +175,15 @@ async function handleEditMessage(messageId, oldText) {
   try {
     await editMessage(messageId, newText);
 
-    const chatId = getActiveChatId();
+    const msg = allMessages.find(m => m.message_id === messageId);
 
-    if (chatId) {
-      loadMessages(chatId, false);
+    if (msg) {
+      msg.text = newText;
     }
+
+    const user = getUser();
+
+    renderMessages(allMessages, user?.user_id || null, handleEditMessage, handleDeleteMessage, false);
   } catch (e) {
     console.error(e);
   }
@@ -176,11 +197,11 @@ async function handleDeleteMessage(messageId) {
   try {
     await deleteMessage(messageId);
 
-    const chatId = getActiveChatId();
+    allMessages = allMessages.filter(m => m.message_id !== messageId);
 
-    if (chatId) {
-      loadMessages(chatId, false);
-    }
+    const user = getUser();
+
+    renderMessages(allMessages, user?.user_id || null, handleEditMessage, handleDeleteMessage, false);
   } catch (e) {
     console.error(e);
   }
