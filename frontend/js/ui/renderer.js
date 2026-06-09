@@ -1,3 +1,14 @@
+function escapeHtml(str) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return String(str).replace(/[&<>"']/g, m => map[m]);
+}
+
 export function renderChatList(chatList, onSelect) {
   const list = document.getElementById('chat-list');
 
@@ -9,8 +20,8 @@ export function renderChatList(chatList, onSelect) {
     item.className = 'chat-item';
     item.dataset.chatId = chat.chat_id;
 
-    const name = chat.name || 'Без названия';
-    const lastMsg = chat.last_message || 'Сообщений нет';
+    const name = escapeHtml(chat.name) || 'Без названия';
+    const lastMsg = escapeHtml(chat.last_message) || 'Сообщений нет';
 
     item.innerHTML = `
       <div class="name">${name}</div>
@@ -40,13 +51,13 @@ export function renderMessages(messages, currentUserId, onEdit, onDelete, prepen
     div.className = `message ${isOwn ? 'own' : 'other'}`;
 
     div.innerHTML = `
-      <div class="sender">${msg.sender_name}</div>
-      <div class="text">${msg.text}</div>
+      <div class="sender">${escapeHtml(msg.sender_name)}</div>
+      <div class="text">${escapeHtml(msg.text)}</div>
       <div class="time">${new Date(msg.sent_at).toLocaleTimeString()}</div>
       ${isOwn ? `
           <div class="message-actions">
-              <button class="edit-msg-btn" data-id="${msg.message_id}" data-text="${msg.text}">Изменить</button>
-              <button class="delete-msg-btn" data-id="${msg.message_id}">Удалить</button>
+              <button class="edit-msg-btn" data-id="${escapeHtml(msg.message_id)}" data-text="${escapeHtml(msg.text)}">Изменить</button>
+              <button class="delete-msg-btn" data-id="${escapeHtml(msg.message_id)}">Удалить</button>
           </div>` : ''}`;
 
     fragment.appendChild(div);

@@ -131,7 +131,7 @@ function startMessagePolling(chatId) {
   }
 }
 
-function stopMessagePolling() {
+export function stopMessagePolling() {
   if (messagePollingIntervalId) {
     clearInterval(messagePollingIntervalId);
 

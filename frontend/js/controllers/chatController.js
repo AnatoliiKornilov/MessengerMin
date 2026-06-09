@@ -1,7 +1,7 @@
 import { getChats, createPersonalChat, createGroup, addMember, removeMember, findUserByName } from '../services/api.js';
 import { renderChatList, markActiveChat, renderChatHeader } from '../ui/renderer.js';
 import { showNotification } from '../ui/notifications.js';
-import { onChatSelected } from './messageController.js';
+import { onChatSelected, stopMessagePolling } from './messageController.js';
 import { setActiveChatId, getActiveChatId } from '../state.js';
 import { clearAuth } from '../services/authService.js';
 import { showScreen } from '../ui/router.js';
@@ -79,7 +79,8 @@ export async function handleNewPersonalChat() {
 export async function handleNewGroup() {
   const name = prompt('Введите название группы:');
 
-  if (name === null) {
+  if (!name || name.length > 100) {
+    showNotification('Название группы должно быть не длиннее 100 символов', 'error');
     return;
   }
 
@@ -134,7 +135,10 @@ async function handleRemoveMember(chatId) {
 
 function handleLogout() {
   clearAuth();
+
   stopChatPolling();
+  stopMessagePolling();
+
   closeChatOnMobile();
   showScreen('auth-screen');
 }

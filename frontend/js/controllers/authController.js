@@ -4,6 +4,25 @@ import { showScreen } from '../ui/router.js';
 import { showNotification } from '../ui/notifications.js';
 import { loadChats, startChatPolling } from './chatController.js';
 
+function validateUsername(name) {
+  if (!name || name.length < 3 || name.length > 50) {
+    return 'Имя должно быть от 3 до 50 символов';
+  }
+
+  if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+    return 'Имя может содержать только буквы, цифры, - и _';
+  }
+
+  return null;
+}
+
+function validatePassword(password) {
+  if (!password || password.length < 8 || password.length > 128) {
+    return 'Пароль должен быть от 8 до 128 символов';
+  }
+  return null;
+}
+
 export function initAuthHandlers() {
   if (hasSavedSession()) {
     showScreen('chat-screen');
@@ -19,8 +38,9 @@ export function initAuthHandlers() {
     const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value;
 
-    if (!username || !password) {
-      showNotification('Пожалуйста, заполните все поля', 'error');
+    const err = validateUsername(username) || validatePassword(password);
+    if (err) {
+      showNotification(err, 'error');
       return;
     }
 
@@ -45,8 +65,9 @@ export function initAuthHandlers() {
     const username = document.getElementById('reg-username').value.trim();
     const password = document.getElementById('reg-password').value;
 
-    if (!username || !password) {
-      showNotification('Пожалуйста, заполните все поля', 'error');
+    const err = validateUsername(username) || validatePassword(password);
+    if (err) {
+      showNotification(err, 'error');
       return;
     }
 

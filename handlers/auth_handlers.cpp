@@ -9,6 +9,7 @@
 #include <chrono>
 #include <exception>
 #include <optional>
+#include <regex>
 
 using JSON = nlohmann::json;
 
@@ -22,9 +23,17 @@ void handle_register(
     std::string user_name = body.at("user_name");
     std::string password = body.at("password");
 
-    if (user_name.length() < 3 || password.length() < 8) {
+    if (user_name.size() < 3 || user_name.size() > 50 ||
+      password.size() < 8 || password.size() > 128) {
       response.status = 400;
       response.set_content(R"({"error":"Invalid username or password length"})", "application/json");
+      return;
+    }
+
+    std::regex user_name_regex("^[a-zA-Z0-9_-]{3,50}$");
+    if (!std::regex_match(user_name, user_name_regex)) {
+      response.status = 400;
+      response.set_content(R"({"error":"Username contains invalid characters"})", "application/json");
       return;
     }
 
@@ -59,9 +68,17 @@ void handle_login(
     std::string user_name = body.at("user_name");
     std::string password = body.at("password");
 
-    if (user_name.length() < 3 || password.length() < 8) {
+    if (user_name.size() < 3 || user_name.size() > 50 ||
+      password.size() < 8 || password.size() > 128) {
       response.status = 400;
       response.set_content(R"({"error":"Invalid username or password length"})", "application/json");
+      return;
+    }
+
+    std::regex user_name_regex("^[a-zA-Z0-9_-]{3,50}$");
+    if (!std::regex_match(user_name, user_name_regex)) {
+      response.status = 400;
+      response.set_content(R"({"error":"Username contains invalid characters"})", "application/json");
       return;
     }
 

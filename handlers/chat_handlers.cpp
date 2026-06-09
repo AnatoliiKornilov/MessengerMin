@@ -196,6 +196,12 @@ void handle_remove_member(
     return;
   }
 
+  if (member_id == *user_id) {
+    response.status = 400;
+    response.set_content(R"({"error":"Cannot remove yourself"})", "application/json");
+    return;
+  }
+
   try {
     context.chats.remove_member(chat_id, member_id);
 
